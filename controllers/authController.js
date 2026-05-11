@@ -101,3 +101,4 @@ const logout = (req, res) => {
 };
 
 module.exports = { getRegister, postRegister, getLogin, postLogin, logout };
+

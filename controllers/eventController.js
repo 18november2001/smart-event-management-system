@@ -98,6 +98,8 @@ const createEvent = async (req, res) => {
   }
 };
 
+
+
 // POST /events/:id/edit — Admin: update event
 const updateEvent = async (req, res) => {
   const { title, description, category, date, location, totalCapacity, ticketPrice, imageUrl } = req.body;

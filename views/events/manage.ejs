@@ -1,0 +1,334 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<section class="container py-5" style="margin-top: 76px;">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0">Manage Events</h3>
+    <button
+      class="btn fw-semibold text-white"
+      style="background-color: #e94560;"
+      data-bs-toggle="modal"
+      data-bs-target="#createEventModal"
+    >
+      <i class="bi bi-plus-circle me-1"></i> Create Event
+    </button>
+  </div>
+
+  <!-- Error Alert -->
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bi bi-exclamation-circle me-2"></i><%= error %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <% } %>
+
+  <!-- No Events State -->
+  <% if (events.length === 0) { %>
+    <div class="text-center py-5">
+      <i class="bi bi-calendar-x display-1 text-muted"></i>
+      <h5 class="mt-3 text-muted">No events yet</h5>
+      <p class="text-muted small">Create your first event to get started</p>
+      <button
+        class="btn btn-warning fw-semibold mt-2"
+        data-bs-toggle="modal"
+        data-bs-target="#createEventModal"
+      >
+        <i class="bi bi-plus-circle me-1"></i> Create First Event
+      </button>
+    </div>
+
+  <% } else { %>
+
+    <!-- Events Table -->
+    <div class="card border-0 shadow-sm rounded-3 mb-5">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead style="background-color: #1a1a2e; color: white;">
+              <tr>
+                <th class="ps-4 py-3">Event</th>
+                <th>Category</th>
+                <th>Date</th>
+                <th>Location</th>
+                <th>Price</th>
+                <th>Capacity</th>
+                <th class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% events.forEach(event => { %>
+                <% const pct = Math.round((event.bookedCount / event.totalCapacity) * 100); %>
+                <tr>
+
+                  <!-- Title & Status -->
+                  <td class="ps-4">
+                    <p class="fw-semibold mb-0"><%= event.title %></p>
+                    <span class="badge" style="font-size: 0.7rem; background-color: <%= event.isSoldOut ? '#6c757d' : '#198754' %>; color: white;">
+                      <%= event.isSoldOut ? 'Sold Out' : 'Available' %>
+                    </span>
+                  </td>
+
+                  <!-- Category -->
+                  <td>
+                    <span class="badge text-white text-capitalize" style="background-color: #e94560;">
+                      <%= event.category %>
+                    </span>
+                  </td>
+
+                  <!-- Date -->
+                  <td class="text-muted small">
+                    <%= new Date(event.date).toLocaleDateString('en-ZA', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+                  </td>
+
+                  <!-- Location -->
+                  <td class="text-muted small"><%= event.location %></td>
+
+                  <!-- Price -->
+                  <td class="fw-semibold" style="color: #e94560;">
+                    <% if (event.ticketPrice === 0) { %>Free<% } else { %>R<%= event.ticketPrice %><% } %>
+                  </td>
+
+                  <!-- Capacity Bar -->
+                  <td style="min-width: 140px;">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                      <span><%= event.bookedCount %>/<%= event.totalCapacity %></span>
+                      <span><%= pct %>%</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                      <div
+                        class="progress-bar"
+                        style="width: <%= pct %>%;
+                               background-color: <%= pct >= 90 ? '#dc3545' : pct >= 60 ? '#ffc107' : '#e94560' %>;"
+                      ></div>
+                    </div>
+                  </td>
+
+                  <!-- Actions -->
+                  <td class="text-center">
+                    <button
+                      class="btn btn-sm btn-outline-secondary me-1"
+                      data-bs-toggle="modal"
+                      data-bs-target="#editEventModal"
+                      data-id="<%= event._id %>"
+                      data-title="<%= event.title %>"
+                      data-description="<%= event.description %>"
+                      data-category="<%= event.category %>"
+                      data-date="<%= new Date(event.date).toISOString().split('T')[0] %>"
+                      data-location="<%= event.location %>"
+                      data-capacity="<%= event.totalCapacity %>"
+                      data-price="<%= event.ticketPrice %>"
+                      data-image="<%= event.imageUrl %>"
+                    >
+                      <i class="bi bi-pencil"></i>
+                    </button>
+
+                    <form action="/events/<%= event._id %>/delete" method="POST" class="d-inline"
+                          onsubmit="return confirm('Delete <%= event.title %>? This cannot be undone.')">
+                      <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </td>
+
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  <% } %>
+
+</section>
+
+<!-- ================================ -->
+<!-- CREATE EVENT MODAL               -->
+<!-- ================================ -->
+<div class="modal fade" id="createEventModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content rounded-3">
+
+      <div class="modal-header text-white" style="background-color: #1a1a2e;">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-plus-circle me-2"></i>Create New Event
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form action="/events" method="POST">
+        <div class="modal-body p-4">
+          <div class="row g-3">
+
+            <!-- Title -->
+            <div class="col-12">
+              <label class="form-label fw-semibold small">Event Title</label>
+              <input type="text" name="title" class="form-control" placeholder="e.g. Annual Tech Conference" required>
+            </div>
+
+            <!-- Description -->
+            <div class="col-12">
+              <label class="form-label fw-semibold small">Description</label>
+              <textarea name="description" class="form-control" rows="3" placeholder="Describe the event..." required></textarea>
+            </div>
+
+            <!-- Category & Date -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Category</label>
+              <select name="category" class="form-select" required>
+                <option value="">Select category</option>
+                <option value="conference">Conference</option>
+                <option value="workshop">Workshop</option>
+                <option value="festival">Festival</option>
+                <option value="private">Private</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Date & Time</label>
+              <input type="datetime-local" name="date" class="form-control" required>
+            </div>
+
+            <!-- Location & Price -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Location</label>
+              <input type="text" name="location" class="form-control" placeholder="e.g. Sandton Convention Centre" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Ticket Price (R)</label>
+              <input type="number" name="ticketPrice" class="form-control" placeholder="0 for free" min="0" required>
+            </div>
+
+            <!-- Capacity & Image -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Total Capacity</label>
+              <input type="number" name="totalCapacity" class="form-control" placeholder="e.g. 200" min="1" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Image URL <span class="text-muted">(optional)</span></label>
+              <input type="url" name="imageUrl" class="form-control" placeholder="https://...">
+            </div>
+
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn text-white fw-semibold" style="background-color: #e94560;">
+            <i class="bi bi-plus-circle me-1"></i> Create Event
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- ================================ -->
+<!-- EDIT EVENT MODAL                 -->
+<!-- ================================ -->
+<div class="modal fade" id="editEventModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content rounded-3">
+
+      <div class="modal-header text-white" style="background-color: #0f3460;">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-pencil me-2"></i>Edit Event
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form id="editEventForm" action="" method="POST">
+        <div class="modal-body p-4">
+          <div class="row g-3">
+
+            <div class="col-12">
+              <label class="form-label fw-semibold small">Event Title</label>
+              <input type="text" name="title" id="edit-title" class="form-control" required>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold small">Description</label>
+              <textarea name="description" id="edit-description" class="form-control" rows="3" required></textarea>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Category</label>
+              <select name="category" id="edit-category" class="form-select" required>
+                <option value="conference">Conference</option>
+                <option value="workshop">Workshop</option>
+                <option value="festival">Festival</option>
+                <option value="private">Private</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Date & Time</label>
+              <input type="datetime-local" name="date" id="edit-date" class="form-control" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Location</label>
+              <input type="text" name="location" id="edit-location" class="form-control" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Ticket Price (R)</label>
+              <input type="number" name="ticketPrice" id="edit-price" class="form-control" min="0" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Total Capacity</label>
+              <input type="number" name="totalCapacity" id="edit-capacity" class="form-control" min="1" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Image URL <span class="text-muted">(optional)</span></label>
+              <input type="url" name="imageUrl" id="edit-image" class="form-control">
+            </div>
+
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn text-white fw-semibold" style="background-color: #0f3460;">
+            <i class="bi bi-save me-1"></i> Save Changes
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- Script: populate edit modal with event data -->
+<script>
+  const editModal = document.getElementById('editEventModal');
+  editModal.addEventListener('show.bs.modal', function (e) {
+    const btn = e.relatedTarget;
+
+    // Set form action dynamically
+    document.getElementById('editEventForm').action = '/events/' + btn.dataset.id + '/edit';
+
+    // Populate fields
+    document.getElementById('edit-title').value       = btn.dataset.title;
+    document.getElementById('edit-description').value = btn.dataset.description;
+    document.getElementById('edit-location').value    = btn.dataset.location;
+    document.getElementById('edit-capacity').value    = btn.dataset.capacity;
+    document.getElementById('edit-price').value       = btn.dataset.price;
+    document.getElementById('edit-image').value       = btn.dataset.image || '';
+    document.getElementById('edit-date').value        = btn.dataset.date;
+
+    // Set category dropdown
+    const categorySelect = document.getElementById('edit-category');
+    categorySelect.value = btn.dataset.category;
+  });
+</script>
+
+<%- include('../partials/footer') %>
