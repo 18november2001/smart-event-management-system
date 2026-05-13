@@ -1,0 +1,140 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<section class="container py-5" style="margin-top: 76px;">
+
+  <!-- Back Button -->
+  <a href="/" class="btn btn-outline-secondary btn-sm mb-4">
+    <i class="bi bi-arrow-left me-1"></i> Back to Events
+  </a>
+
+  <div class="row g-5">
+
+    <!-- LEFT: Event Image -->
+    <div class="col-md-6">
+      <img
+        src="<%= event.imageUrl || 'https://placehold.co/600x400/1a1a2e/e94560?text=SmartEvents' %>"
+        alt="<%= event.title %>"
+        class="img-fluid rounded-3 shadow"
+        style="width: 100%; height: 380px; object-fit: cover;"
+      >
+    </div>
+
+    <!-- RIGHT: Event Info -->
+    <div class="col-md-6">
+
+      <!-- Category & Sold Out Badge -->
+      <div class="d-flex gap-2 mb-3">
+        <span class="badge text-white text-capitalize" style="background-color: #e94560;">
+          <%= event.category %>
+        </span>
+        <% if (event.isSoldOut) { %>
+          <span class="badge bg-secondary">Sold Out</span>
+        <% } else { %>
+          <span class="badge bg-success">Available</span>
+        <% } %>
+      </div>
+
+      <!-- Title -->
+      <h2 class="fw-bold mb-3"><%= event.title %></h2>
+
+      <!-- Meta Info -->
+      <ul class="list-unstyled text-muted mb-4">
+        <li class="mb-2">
+          <i class="bi bi-calendar-event me-2" style="color: #e94560;"></i>
+          <%= new Date(event.date).toLocaleDateString('en-ZA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %>
+        </li>
+        <li class="mb-2">
+          <i class="bi bi-clock me-2" style="color: #e94560;"></i>
+          <%= new Date(event.date).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) %>
+        </li>
+        <li class="mb-2">
+          <i class="bi bi-geo-alt me-2" style="color: #e94560;"></i>
+          <%= event.location %>
+        </li>
+        <li class="mb-2">
+          <i class="bi bi-people me-2" style="color: #e94560;"></i>
+          <%= event.availableSeats %> of <%= event.totalCapacity %> spots remaining
+        </li>
+      </ul>
+
+      <!-- Capacity Bar -->
+      <% const percentFull = Math.round((event.bookedCount / event.totalCapacity) * 100); %>
+      <div class="mb-4">
+        <div class="d-flex justify-content-between small text-muted mb-1">
+          <span>Capacity</span>
+          <span><%= percentFull %>% full</span>
+        </div>
+        <div class="progress" style="height: 8px; border-radius: 4px;">
+          <div
+            class="progress-bar"
+            style="width: <%= percentFull %>%;
+                   background-color: <%= percentFull >= 90 ? '#dc3545' : percentFull >= 60 ? '#ffc107' : '#e94560' %>;"
+          ></div>
+        </div>
+      </div>
+
+      <!-- Price -->
+      <div class="mb-4">
+        <span class="fs-3 fw-bold" style="color: #e94560;">
+          <% if (event.ticketPrice === 0) { %>
+            Free
+          <% } else { %>
+            R<%= event.ticketPrice %>
+          <% } %>
+        </span>
+        <span class="text-muted small ms-1">per ticket</span>
+      </div>
+
+      <!-- Book Button -->
+      <% if (event.isSoldOut) { %>
+        <button class="btn btn-secondary btn-lg w-100" disabled>
+          <i class="bi bi-x-circle me-2"></i>Sold Out
+        </button>
+
+      <% } else if (!user) { %>
+        <a href="/login" class="btn btn-lg w-100 text-white fw-semibold" style="background-color: #e94560;">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Login to Book
+        </a>
+        <p class="text-muted small text-center mt-2">You need an account to book tickets</p>
+
+      <% } else { %>
+        <form action="/bookings" method="POST">
+          <input type="hidden" name="eventId" value="<%= event._id %>">
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Number of Tickets</label>
+            <input
+              type="number"
+              name="ticketsBooked"
+              class="form-control"
+              value="1"
+              min="1"
+              max="<%= event.availableSeats %>"
+              required
+            >
+          </div>
+
+          <button type="submit" class="btn btn-lg w-100 text-white fw-semibold" style="background-color: #e94560;">
+            <i class="bi bi-ticket-perforated me-2"></i>Book Now
+          </button>
+        </form>
+
+      <% } %>
+
+    </div>
+  </div>
+
+  <!-- Description -->
+  <div class="row mt-5">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm p-4" style="border-radius: 12px;">
+        <h5 class="fw-bold mb-3">About This Event</h5>
+        <p class="text-muted" style="line-height: 1.8;"><%= event.description %></p>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<%- include('../partials/footer') %>
